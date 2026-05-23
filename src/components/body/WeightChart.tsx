@@ -50,10 +50,15 @@ export default function WeightChart({
     .join(" ");
   const areaPath = `${linePath} L ${px(data.length - 1).toFixed(1)} ${(P.top + cH).toFixed(1)} L ${P.left.toFixed(1)} ${(P.top + cH).toFixed(1)} Z`;
 
-  const yTicks = [minV, (minV + maxV) / 2, maxV];
+  const yTicks = [
+    { id: "min", v: minV },
+    { id: "mid", v: (minV + maxV) / 2 },
+    { id: "max", v: maxV },
+  ];
   const xLabels = [0, Math.floor(data.length / 2), data.length - 1]
     .filter((i, idx, arr) => arr.indexOf(i) === idx)
     .map((i) => ({
+      idx: i,
       x: px(i),
       label: new Date(data[i].date).toLocaleDateString("es-MX", {
         day: "numeric",
@@ -75,9 +80,9 @@ export default function WeightChart({
         </linearGradient>
       </defs>
 
-      {yTicks.map((v) => (
+      {yTicks.map(({ id, v }) => (
         <line
-          key={`gl-${v.toFixed(2)}`}
+          key={`gl-${id}`}
           x1={P.left}
           y1={py(v)}
           x2={W - P.right}
@@ -87,9 +92,9 @@ export default function WeightChart({
         />
       ))}
 
-      {yTicks.map((v) => (
+      {yTicks.map(({ id, v }) => (
         <text
-          key={`yl-${v.toFixed(2)}`}
+          key={`yl-${id}`}
           x={P.left - 3}
           y={py(v) + 3}
           textAnchor="end"
@@ -102,7 +107,7 @@ export default function WeightChart({
 
       {xLabels.map((xl) => (
         <text
-          key={xl.label}
+          key={xl.idx}
           x={xl.x}
           y={H - 2}
           textAnchor="middle"
@@ -123,7 +128,8 @@ export default function WeightChart({
       />
 
       {data.map((d, i) => (
-        <circle key={d.date} cx={px(i)} cy={py(d.value)} r="2" fill={color} />
+        // biome-ignore lint/suspicious/noArrayIndexKey: index is the stable position identity for chart dots
+        <circle key={i} cx={px(i)} cy={py(d.value)} r="2" fill={color} />
       ))}
 
       {[0, data.length - 1].map((i) => (

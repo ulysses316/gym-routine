@@ -40,19 +40,24 @@ function LineChart({ data }: { data: { date: string; e1rm: number }[] }) {
     .join(" ");
   const areaPath = `${linePath} L ${px(data.length - 1).toFixed(1)} ${(P.top + cH).toFixed(1)} L ${P.left.toFixed(1)} ${(P.top + cH).toFixed(1)} Z`;
 
-  const yTicks = [minV, (minV + maxV) / 2, maxV];
-  const xLabels = data
-    .filter(
-      (_, i) =>
-        i === 0 || i === Math.floor(data.length / 2) || i === data.length - 1,
-    )
-    .map((d) => ({
-      x: px(data.indexOf(d)),
-      label: new Date(d.date).toLocaleDateString("es-MX", {
-        day: "numeric",
-        month: "short",
-      }),
-    }));
+  const yTicks = [
+    { id: "min", v: minV },
+    { id: "mid", v: (minV + maxV) / 2 },
+    { id: "max", v: maxV },
+  ];
+  const xLabelIndices = [
+    0,
+    Math.floor(data.length / 2),
+    data.length - 1,
+  ].filter((v, i, arr) => arr.indexOf(v) === i);
+  const xLabels = xLabelIndices.map((i) => ({
+    x: px(i),
+    idx: i,
+    label: new Date(data[i].date).toLocaleDateString("es-MX", {
+      day: "numeric",
+      month: "short",
+    }),
+  }));
 
   return (
     <svg
@@ -69,9 +74,9 @@ function LineChart({ data }: { data: { date: string; e1rm: number }[] }) {
       </defs>
 
       {/* Grid lines */}
-      {yTicks.map((v) => (
+      {yTicks.map(({ id, v }) => (
         <line
-          key={`gl-${v.toFixed(2)}`}
+          key={`gl-${id}`}
           x1={P.left}
           y1={py(v)}
           x2={W - P.right}
@@ -82,9 +87,9 @@ function LineChart({ data }: { data: { date: string; e1rm: number }[] }) {
       ))}
 
       {/* Y labels */}
-      {yTicks.map((v) => (
+      {yTicks.map(({ id, v }) => (
         <text
-          key={`yl-${v.toFixed(2)}`}
+          key={`yl-${id}`}
           x={P.left - 3}
           y={py(v) + 3}
           textAnchor="end"
@@ -98,7 +103,7 @@ function LineChart({ data }: { data: { date: string; e1rm: number }[] }) {
       {/* X labels */}
       {xLabels.map((xl) => (
         <text
-          key={xl.label}
+          key={xl.idx}
           x={xl.x}
           y={H - 2}
           textAnchor="middle"
@@ -123,7 +128,8 @@ function LineChart({ data }: { data: { date: string; e1rm: number }[] }) {
 
       {/* Dots */}
       {data.map((d, i) => (
-        <circle key={d.date} cx={px(i)} cy={py(d.e1rm)} r="2" fill="#f97316" />
+        // biome-ignore lint/suspicious/noArrayIndexKey: index is the stable position identity for chart dots
+        <circle key={i} cx={px(i)} cy={py(d.e1rm)} r="2" fill="#f97316" />
       ))}
 
       {/* First & last labels */}

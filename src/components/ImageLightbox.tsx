@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
   src: string;
@@ -8,26 +8,31 @@ interface Props {
 }
 
 export default function ImageLightbox({ src, alt }: Props) {
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
+  const expandBtnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    const onClose = () => {
-      document.body.style.overflow = "";
+    const btn = expandBtnRef.current;
+    if (!btn) return;
+    const handler = (e: TouchEvent) => {
+      e.preventDefault();
+      setOpen(true);
     };
-    dialog.addEventListener("close", onClose);
-    return () => dialog.removeEventListener("close", onClose);
+    btn.addEventListener("touchstart", handler, { passive: false });
+    return () => btn.removeEventListener("touchstart", handler);
   }, []);
 
-  function openModal() {
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    dialogRef.current?.showModal();
-  }
-
-  function closeModal() {
-    dialogRef.current?.close();
-  }
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
 
   return (
     <>
@@ -39,31 +44,37 @@ export default function ImageLightbox({ src, alt }: Props) {
           className="h-full w-full object-cover transition duration-200 group-hover:scale-105 group-hover:brightness-90"
         />
         <button
+          ref={expandBtnRef}
           type="button"
-          onClick={openModal}
-          className="absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80 active:scale-95"
+          onClick={() => setOpen(true)}
+          style={{ touchAction: "manipulation" }}
+          className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white transition active:scale-95"
           aria-label="Ver imagen completa"
         >
           <ExpandIcon />
         </button>
       </div>
 
-      <dialog
-        ref={dialogRef}
-        className="m-0 h-[100dvh] w-[100dvw] max-h-[100dvh] max-w-[100vw] bg-transparent p-0"
-        onClick={closeModal}
-        onKeyDown={(e) => e.key === "Escape" && closeModal()}
-      >
-        <div className="flex h-full w-full items-center justify-center p-4">
+      {open && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={alt}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4"
+          onClick={() => setOpen(false)}
+          onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+          style={{ touchAction: "manipulation" }}
+        >
           <button
             type="button"
-            onClick={closeModal}
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/80 text-xl text-white backdrop-blur-sm transition hover:bg-zinc-700"
+            onClick={() => setOpen(false)}
+            style={{ touchAction: "manipulation" }}
+            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-zinc-800/80 text-xl text-white transition hover:bg-zinc-700 active:scale-95"
             aria-label="Cerrar"
           >
             ✕
           </button>
-          {/* biome-ignore lint/performance/noImgElement: natural img needed for dynamic sizing in dialog */}
+          {/* biome-ignore lint/performance/noImgElement: natural img needed for dynamic sizing in modal */}
           {/* biome-ignore lint/a11y/useKeyWithClickEvents: stopPropagation only, not interactive */}
           <img
             src={src}
@@ -72,7 +83,7 @@ export default function ImageLightbox({ src, alt }: Props) {
             onClick={(e) => e.stopPropagation()}
           />
         </div>
-      </dialog>
+      )}
     </>
   );
 }

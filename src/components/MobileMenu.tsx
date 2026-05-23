@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { logout } from "@/actions/auth";
 
 interface Props {
@@ -10,15 +10,43 @@ interface Props {
 
 export default function MobileMenu({ session }: Props) {
   const [open, setOpen] = useState(false);
+  const hamburgerRef = useRef<HTMLButtonElement>(null);
+  const overlayRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const btn = hamburgerRef.current;
+    if (!btn) return;
+    const handler = (e: TouchEvent) => {
+      e.preventDefault();
+      setOpen((v) => !v);
+    };
+    btn.addEventListener("touchstart", handler, { passive: false });
+    return () => btn.removeEventListener("touchstart", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const btn = overlayRef.current;
+    if (!btn) return;
+    const handler = (e: TouchEvent) => {
+      e.preventDefault();
+      setOpen(false);
+    };
+    btn.addEventListener("touchstart", handler, { passive: false });
+    return () => btn.removeEventListener("touchstart", handler);
+  }, [open]);
+
   const close = () => setOpen(false);
 
   return (
     <div className="md:hidden">
       <button
+        ref={hamburgerRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label="Menú"
-        className="rounded-md p-2 text-zinc-400 transition hover:text-white"
+        aria-expanded={open}
+        className="relative rounded-md p-2 text-zinc-400 transition hover:text-white active:text-white"
       >
         {open ? (
           <svg
@@ -58,10 +86,13 @@ export default function MobileMenu({ session }: Props) {
 
       {open && (
         <>
-          <div
-            className="fixed inset-0 z-10"
+          <button
+            ref={overlayRef}
+            type="button"
+            className="fixed inset-0 z-10 cursor-default bg-transparent"
             onClick={close}
-            aria-hidden="true"
+            aria-label="Cerrar menú"
+            tabIndex={-1}
           />
           <div className="absolute left-0 right-0 z-20 border-b border-zinc-800 bg-zinc-900 px-4 py-3 shadow-xl">
             <nav className="flex flex-col gap-1 text-sm">

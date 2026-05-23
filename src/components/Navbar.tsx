@@ -7,7 +7,7 @@ export default async function Navbar() {
   const session = await getSession();
 
   return (
-    <nav className="relative z-50 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur">
+    <nav className="relative z-50 border-b border-zinc-800 bg-zinc-900">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
         <Link
           href={session ? "/dashboard" : "/"}
