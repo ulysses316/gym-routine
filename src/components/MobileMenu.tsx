@@ -96,6 +96,20 @@ export default function MobileMenu({ session }: Props) {
                   >
                     Registros
                   </Link>
+                  <Link
+                    href="/stats"
+                    onClick={close}
+                    className="rounded-md px-3 py-2.5 text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+                  >
+                    Stats
+                  </Link>
+                  <Link
+                    href="/body"
+                    onClick={close}
+                    className="rounded-md px-3 py-2.5 text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+                  >
+                    Cuerpo
+                  </Link>
 
                   <div className="my-1 border-t border-zinc-800" />
 

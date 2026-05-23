@@ -5,22 +5,47 @@ import { useActionState, useState } from "react";
 import { createRoutine } from "@/actions/routines";
 import type { RoutineState } from "@/lib/definitions";
 
-interface Exercise {
+interface Label {
   id: string;
   name: string;
 }
 
-export default function RoutineForm({ exercises }: { exercises: Exercise[] }) {
+interface Exercise {
+  id: string;
+  name: string;
+  labels: { label: Label }[];
+}
+
+export default function RoutineForm({
+  exercises,
+  allLabels,
+}: {
+  exercises: Exercise[];
+  allLabels: Label[];
+}) {
   const [state, action, pending] = useActionState(
     createRoutine,
     undefined as RoutineState,
   );
   const [selected, setSelected] = useState<string[]>([]);
   const [search, setSearch] = useState("");
+  const [labelFilter, setLabelFilter] = useState<Set<string>>(new Set());
 
-  const filtered = exercises.filter((e) =>
-    e.name.toLowerCase().includes(search.toLowerCase()),
-  );
+  function toggleLabel(id: string) {
+    setLabelFilter((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  const filtered = exercises.filter((e) => {
+    const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase());
+    const matchesLabel =
+      labelFilter.size === 0 ||
+      e.labels.some(({ label }) => labelFilter.has(label.id));
+    return matchesSearch && matchesLabel;
+  });
 
   function toggle(id: string) {
     setSelected((prev) =>
@@ -72,6 +97,38 @@ export default function RoutineForm({ exercises }: { exercises: Exercise[] }) {
             )}
           </label>
 
+          {/* Label filter chips */}
+          {allLabels.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
+              {allLabels.map((label) => {
+                const active = labelFilter.has(label.id);
+                return (
+                  <button
+                    key={label.id}
+                    type="button"
+                    onClick={() => toggleLabel(label.id)}
+                    className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition ${
+                      active
+                        ? "border-orange-500 bg-orange-500/20 text-orange-400"
+                        : "border-zinc-700 bg-zinc-800 text-zinc-400 hover:border-zinc-500 hover:text-white"
+                    }`}
+                  >
+                    {label.name}
+                  </button>
+                );
+              })}
+              {labelFilter.size > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setLabelFilter(new Set())}
+                  className="rounded-full border border-zinc-700 px-2.5 py-0.5 text-xs text-zinc-500 transition hover:border-zinc-500 hover:text-white"
+                >
+                  Limpiar
+                </button>
+              )}
+            </div>
+          )}
+
           <input
             type="text"
             placeholder="Buscar ejercicio..."
@@ -110,7 +167,12 @@ export default function RoutineForm({ exercises }: { exercises: Exercise[] }) {
                     >
                       {isSelected ? "✓" : "○"}
                     </span>
-                    {exercise.name}
+                    <span className="flex-1">{exercise.name}</span>
+                    {exercise.labels.length > 0 && (
+                      <span className="shrink-0 text-xs text-zinc-600">
+                        {exercise.labels.map((l) => l.label.name).join(", ")}
+                      </span>
+                    )}
                   </button>
                 );
               })}

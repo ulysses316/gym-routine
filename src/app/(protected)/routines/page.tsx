@@ -46,9 +46,12 @@ export default async function RoutinesPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="truncate text-lg font-semibold text-white">
+                  <Link
+                    href={`/routines/${routine.id}`}
+                    className="truncate text-lg font-semibold text-white hover:text-orange-400"
+                  >
                     {routine.name}
-                  </h2>
+                  </Link>
                   <p className="mt-0.5 text-sm text-zinc-400">
                     {routine.exercises.length} ejercicio
                     {routine.exercises.length !== 1 ? "s" : ""}

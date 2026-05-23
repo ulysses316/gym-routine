@@ -13,7 +13,7 @@ export default async function EditRoutinePage({
   const session = await getSession();
   if (!session) redirect("/login");
 
-  const [routine, exercises] = await Promise.all([
+  const [routine, exercises, allLabels] = await Promise.all([
     prisma.routine.findFirst({
       where: { id, userId: session.userId },
       include: {
@@ -22,8 +22,13 @@ export default async function EditRoutinePage({
     }),
     prisma.exercise.findMany({
       orderBy: { name: "asc" },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        labels: { select: { label: { select: { id: true, name: true } } } },
+      },
     }),
+    prisma.label.findMany({ orderBy: { name: "asc" } }),
   ]);
 
   if (!routine) notFound();
@@ -48,6 +53,7 @@ export default async function EditRoutinePage({
         defaultName={routine.name}
         defaultExerciseIds={defaultExerciseIds}
         exercises={exercises}
+        allLabels={allLabels}
       />
     </div>
   );

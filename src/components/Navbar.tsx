@@ -44,6 +44,18 @@ export default async function Navbar() {
               >
                 Registros
               </Link>
+              <Link
+                href="/stats"
+                className="rounded-md px-3 py-1.5 text-zinc-400 transition hover:text-white"
+              >
+                Stats
+              </Link>
+              <Link
+                href="/body"
+                className="rounded-md px-3 py-1.5 text-zinc-400 transition hover:text-white"
+              >
+                Cuerpo
+              </Link>
               <span className="mx-1 text-zinc-600">|</span>
               <span className="text-zinc-400">{session.name}</span>
               <form action={logout}>

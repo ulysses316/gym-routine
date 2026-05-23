@@ -19,8 +19,19 @@ export async function createWorkoutLog(
     notes: formData.get("notes") || undefined,
   });
 
-  if (!validated.success) {
-    return { message: "Datos inválidos." };
+  if (!validated.success) return { message: "Datos inválidos." };
+
+  const setsRaw = formData.get("setsJson") as string | null;
+  let sets: {
+    exerciseId: string;
+    reps: number;
+    weightKg: number;
+    setNumber: number;
+  }[] = [];
+  try {
+    sets = JSON.parse(setsRaw ?? "[]");
+  } catch {
+    sets = [];
   }
 
   const log = await prisma.workoutLog.create({
@@ -29,6 +40,14 @@ export async function createWorkoutLog(
       routineId: validated.data.routineId,
       date: new Date(validated.data.date),
       notes: validated.data.notes,
+      sets: {
+        create: sets.map((s) => ({
+          exerciseId: s.exerciseId,
+          reps: s.reps,
+          weightKg: s.weightKg,
+          setNumber: s.setNumber,
+        })),
+      },
     },
   });
 

@@ -10,7 +10,17 @@ export default async function NewLogPage() {
   const routines = await prisma.routine.findMany({
     where: { userId: session.userId },
     orderBy: { name: "asc" },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      exercises: {
+        orderBy: { order: "asc" },
+        select: {
+          exerciseId: true,
+          exercise: { select: { name: true } },
+        },
+      },
+    },
   });
 
   return (

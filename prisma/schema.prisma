@@ -17,6 +17,7 @@ model User {
   exercises   Exercise[]
   routines    Routine[]
   workoutLogs WorkoutLog[]
+  bodyRecords BodyRecord[]
 }
 
 model Exercise {
@@ -82,6 +83,34 @@ model WorkoutLog {
   createdAt DateTime @default(now())
 
   sets WorkoutSet[]
+}
+
+model BodyRecord {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
+  date         DateTime
+  // Composición corporal
+  weightKg     Float?
+  heightCm     Float?
+  bodyFatPct   Float?
+  muscleMassKg Float?
+  waterPct     Float?
+  boneMassKg   Float?
+  // Medidas (cm)
+  neck         Float?
+  shoulders    Float?
+  chest        Float?
+  waist        Float?
+  hips         Float?
+  leftArm      Float?
+  rightArm     Float?
+  leftThigh    Float?
+  rightThigh   Float?
+  leftCalf     Float?
+  rightCalf    Float?
+  notes        String?
+  createdAt    DateTime @default(now())
 }
 
 model WorkoutSet {
