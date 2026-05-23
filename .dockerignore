@@ -1,0 +1,17 @@
+.git
+.next
+node_modules
+prisma/seed-*.ts
+
+# env files — inject secrets at runtime, never bake them into the image
+.env
+.env.*
+
+# dev / tooling
+.claude
+AGENTS.md
+CLAUDE.md
+TODOs.md
+README.md
+lefthook.yml
+biome.json
