@@ -1,0 +1,13 @@
+pre-commit:
+  parallel: true
+  jobs:
+    - name: Linter
+      run: bun run lint {staged_files}
+      glob: "*.{js,ts,jsx,tsx}"
+      stage_fixed: true
+    - name: Format
+      run: bun run format {staged_files}
+      glob: "*.{js,ts,jsx,tsx}"
+      stage_fixed: true
+    - name: Build
+      run: bun run build
