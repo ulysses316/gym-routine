@@ -1,3 +1,4 @@
+import ChangePasswordForm from "@/components/settings/ChangePasswordForm";
 import WeekStartDayForm from "@/components/settings/WeekStartDayForm";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
@@ -33,6 +34,16 @@ export default async function SettingsPage() {
           currentDay={user.weekStartDay}
           dayLabels={WEEK_DAYS}
         />
+      </div>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5">
+        <h2 className="mb-1 text-sm font-semibold text-white">
+          Cambiar contraseña
+        </h2>
+        <p className="mb-4 text-sm text-zinc-400">
+          Ingresa tu nueva contraseña dos veces para confirmar.
+        </p>
+        <ChangePasswordForm />
       </div>
     </div>
   );
