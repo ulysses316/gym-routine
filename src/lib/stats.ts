@@ -110,6 +110,8 @@ const MUSCLE_CATEGORY: Record<string, MuscleVolume["category"]> = {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+export const WEEK_DAYS = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
 export function e1rm(weight: number, reps: number): number {
   if (reps <= 0) return 0;
   if (reps === 1) return weight;
@@ -121,20 +123,21 @@ function fmtDate(d: Date): string {
   return d.toISOString().split("T")[0];
 }
 
-function mondayOf(d: Date): Date {
+function startOfWeekDay(d: Date, weekStartDay: number): Date {
   const date = new Date(d);
   date.setHours(0, 0, 0, 0);
   const day = date.getDay();
-  date.setDate(date.getDate() - (day === 0 ? 6 : day - 1));
+  const diff = (day - weekStartDay + 7) % 7;
+  date.setDate(date.getDate() - diff);
   return date;
 }
 
-function weekKey(d: Date): string {
-  return fmtDate(mondayOf(d));
+function weekKeyFor(d: Date, weekStartDay: number): string {
+  return fmtDate(startOfWeekDay(d, weekStartDay));
 }
 
-function weekLabel(d: Date): string {
-  return mondayOf(d).toLocaleDateString("es-MX", {
+function weekLabelFor(d: Date, weekStartDay: number): string {
+  return startOfWeekDay(d, weekStartDay).toLocaleDateString("es-MX", {
     day: "numeric",
     month: "short",
   });
@@ -164,7 +167,7 @@ function endOfMonth(offset = 0): Date {
 
 // ─── Core computation ─────────────────────────────────────────────────────────
 
-export function computeStats(logs: LogData[]): StatsResult {
+export function computeStats(logs: LogData[], weekStartDay = 1): StatsResult {
   if (logs.length === 0) {
     return emptyStats();
   }
@@ -187,9 +190,9 @@ export function computeStats(logs: LogData[]): StatsResult {
 
   // ── Period stats ──────────────────────────────────────────────────────────
   const todayStr = fmtDate(now);
-  const thisWeekStart = fmtDate(mondayOf(now));
+  const thisWeekStart = fmtDate(startOfWeekDay(now, weekStartDay));
   const lastWeekStart = fmtDate(
-    new Date(mondayOf(now).getTime() - 7 * 86400000),
+    new Date(startOfWeekDay(now, weekStartDay).getTime() - 7 * 86400000),
   );
   const thisMonthStart = fmtDate(startOfMonth(0));
   const lastMonthStart = fmtDate(startOfMonth(1));
@@ -211,13 +214,13 @@ export function computeStats(logs: LogData[]): StatsResult {
     sortedMuscles.filter((m) => m.volume > 0).at(-1)?.name ?? null;
 
   // ── Weekly volumes (last 16 weeks) ────────────────────────────────────────
-  const weeklyVolumes = computeWeeklyVolumes(logs, 16);
+  const weeklyVolumes = computeWeeklyVolumes(logs, 16, weekStartDay);
 
   // ── PRs ───────────────────────────────────────────────────────────────────
   const prs = computePRs(logs);
 
   // ── Heatmap ───────────────────────────────────────────────────────────────
-  const heatmap = computeHeatmap(workoutDates);
+  const heatmap = computeHeatmap(workoutDates, weekStartDay);
 
   // ── Insights ──────────────────────────────────────────────────────────────
   const insights = generateInsights({
@@ -231,6 +234,7 @@ export function computeStats(logs: LogData[]): StatsResult {
     thisMonth,
     lastMonth,
     prs,
+    weekStartDay,
   });
 
   return {
@@ -437,15 +441,19 @@ function computeMuscleVolumes(logs: LogData[]): MuscleVolume[] {
 
 // ─── Weekly volumes ───────────────────────────────────────────────────────────
 
-function computeWeeklyVolumes(logs: LogData[], weeks: number): WeeklyVolume[] {
+function computeWeeklyVolumes(
+  logs: LogData[],
+  weeks: number,
+  weekStartDay: number,
+): WeeklyVolume[] {
   const map: Record<string, WeeklyVolume> = {};
 
   for (const log of logs) {
-    const key = weekKey(log.date);
+    const key = weekKeyFor(log.date, weekStartDay);
     if (!map[key]) {
       map[key] = {
         weekKey: key,
-        label: weekLabel(log.date),
+        label: weekLabelFor(log.date, weekStartDay),
         volume: 0,
         sets: 0,
         workouts: 0,
@@ -458,17 +466,16 @@ function computeWeeklyVolumes(logs: LogData[], weeks: number): WeeklyVolume[] {
     }
   }
 
-  // Build last `weeks` weeks regardless of data
   const result: WeeklyVolume[] = [];
   for (let i = weeks - 1; i >= 0; i--) {
-    const weekStart = new Date(
-      mondayOf(new Date()).getTime() - i * 7 * 86400000,
+    const ws = new Date(
+      startOfWeekDay(new Date(), weekStartDay).getTime() - i * 7 * 86400000,
     );
-    const key = fmtDate(weekStart);
+    const key = fmtDate(ws);
     result.push(
       map[key] ?? {
         weekKey: key,
-        label: weekLabel(weekStart),
+        label: weekLabelFor(ws, weekStartDay),
         volume: 0,
         sets: 0,
         workouts: 0,
@@ -535,23 +542,27 @@ function computePRs(logs: LogData[]): PR[] {
 
 // ─── Heatmap ──────────────────────────────────────────────────────────────────
 
-function computeHeatmap(workoutDates: string[]): HeatmapDay[] {
+function computeHeatmap(
+  workoutDates: string[],
+  weekStartDay: number,
+): HeatmapDay[] {
   const countMap: Record<string, number> = {};
   for (const d of workoutDates) countMap[d] = (countMap[d] ?? 0) + 1;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Start on the Sunday 52 weeks ago
-  const startSunday = new Date(today);
-  startSunday.setDate(startSunday.getDate() - 364);
-  startSunday.setDate(startSunday.getDate() - startSunday.getDay());
+  const start = new Date(today);
+  start.setDate(start.getDate() - 364);
+  // Rewind to the nearest weekStartDay
+  const diff = (start.getDay() - weekStartDay + 7) % 7;
+  start.setDate(start.getDate() - diff);
 
   const entries: HeatmapDay[] = [];
   for (let w = 0; w < 53; w++) {
     for (let d = 0; d < 7; d++) {
-      const date = new Date(startSunday);
-      date.setDate(startSunday.getDate() + w * 7 + d);
+      const date = new Date(start);
+      date.setDate(start.getDate() + w * 7 + d);
       if (date > today) continue;
       const dateStr = fmtDate(date);
       entries.push({
@@ -578,6 +589,7 @@ function generateInsights({
   thisMonth,
   lastMonth,
   prs,
+  weekStartDay,
 }: {
   logs: LogData[];
   strengthByExercise: ExerciseStrength[];
@@ -589,6 +601,7 @@ function generateInsights({
   thisMonth: PeriodStats;
   lastMonth: PeriodStats;
   prs: PR[];
+  weekStartDay: number;
 }): Insight[] {
   const insights: Insight[] = [];
 
@@ -602,7 +615,7 @@ function generateInsights({
   }
 
   // New PR this week
-  const thisWeekStart = fmtDate(mondayOf(new Date()));
+  const thisWeekStart = fmtDate(startOfWeekDay(new Date(), weekStartDay));
   const weekPRs = prs.filter((p) => p.date >= thisWeekStart && p.isRecent);
   if (weekPRs.length > 0) {
     insights.push({

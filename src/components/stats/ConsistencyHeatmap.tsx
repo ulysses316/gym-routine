@@ -17,7 +17,7 @@ const MONTHS = [
   "Nov",
   "Dic",
 ];
-const DAYS = ["D", "L", "M", "X", "J", "V", "S"];
+const ALL_DAYS = ["D", "L", "M", "X", "J", "V", "S"];
 
 function cellColor(count: number): string {
   if (count === 0) return "bg-zinc-800";
@@ -31,12 +31,18 @@ export default function ConsistencyHeatmap({
   currentStreak,
   bestStreak,
   weeklyFrequency: _weeklyFrequency,
+  weekStartDay = 1,
 }: {
   heatmap: HeatmapDay[];
   currentStreak: number;
   bestStreak: number;
   weeklyFrequency: number;
+  weekStartDay?: number;
 }) {
+  const days = [
+    ...ALL_DAYS.slice(weekStartDay),
+    ...ALL_DAYS.slice(0, weekStartDay),
+  ];
   const [tooltip, setTooltip] = useState<{
     date: string;
     count: number;
@@ -114,7 +120,7 @@ export default function ConsistencyHeatmap({
         <div className="flex gap-0">
           {/* Day labels */}
           <div className="mr-0.5 flex flex-col gap-0.5">
-            {DAYS.map((d, i) => (
+            {days.map((d, i) => (
               <div
                 key={d}
                 className="flex h-3.5 w-5 items-center justify-end pr-1"

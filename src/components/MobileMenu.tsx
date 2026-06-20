@@ -142,6 +142,14 @@ export default function MobileMenu({ session }: Props) {
                     Cuerpo
                   </Link>
 
+                  <Link
+                    href="/settings"
+                    onClick={close}
+                    className="rounded-md px-3 py-2.5 text-zinc-300 transition hover:bg-zinc-800 hover:text-white"
+                  >
+                    Config
+                  </Link>
+
                   <div className="my-1 border-t border-zinc-800" />
 
                   <span className="px-3 py-1 text-xs text-zinc-500">

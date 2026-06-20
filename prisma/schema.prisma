@@ -12,6 +12,7 @@ model User {
   name           String
   email          String   @unique
   hashedPassword String
+  weekStartDay   Int      @default(1) // 0=Dom, 1=Lun, ..., 6=Sáb
   createdAt      DateTime @default(now())
 
   exercises   Exercise[]

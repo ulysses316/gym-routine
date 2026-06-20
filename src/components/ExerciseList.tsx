@@ -3,6 +3,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import PaginationClient from "@/components/PaginationClient";
+
+const PER_PAGE = 25;
 
 interface Label {
   id: string;
@@ -30,6 +33,7 @@ export default function ExerciseList({
   canCreate,
 }: Props) {
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [page, setPage] = useState(1);
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -37,6 +41,7 @@ export default function ExerciseList({
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+    setPage(1);
   }
 
   const filtered =
@@ -45,6 +50,13 @@ export default function ExerciseList({
       : exercises.filter((ex) =>
           ex.labels.some(({ label }) => selected.has(label.id)),
         );
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE);
+  const safePage = Math.min(page, totalPages || 1);
+  const paginated = filtered.slice(
+    (safePage - 1) * PER_PAGE,
+    safePage * PER_PAGE,
+  );
 
   return (
     <div>
@@ -120,58 +132,66 @@ export default function ExerciseList({
           )}
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((exercise) => (
-            <Link
-              key={exercise.id}
-              href={`/exercises/${exercise.id}`}
-              className="group overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 transition hover:border-zinc-600"
-            >
-              <div className="relative h-44 w-full bg-zinc-800">
-                {exercise.photoUrl ? (
-                  <Image
-                    src={exercise.photoUrl}
-                    alt={exercise.name}
-                    fill
-                    className="object-cover transition group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-4xl text-zinc-600">
-                    🏋️
-                  </div>
-                )}
-              </div>
-              <div className="p-4">
-                <h2 className="font-semibold text-white">{exercise.name}</h2>
-                {exercise.description && (
-                  <p className="mt-1 line-clamp-2 text-sm text-zinc-400">
-                    {exercise.description}
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {paginated.map((exercise) => (
+              <Link
+                key={exercise.id}
+                href={`/exercises/${exercise.id}`}
+                className="group overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900 transition hover:border-zinc-600"
+              >
+                <div className="relative h-44 w-full bg-zinc-800">
+                  {exercise.photoUrl ? (
+                    <Image
+                      src={exercise.photoUrl}
+                      alt={exercise.name}
+                      fill
+                      className="object-cover transition group-hover:scale-105"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-4xl text-zinc-600">
+                      🏋️
+                    </div>
+                  )}
+                </div>
+                <div className="p-4">
+                  <h2 className="font-semibold text-white">{exercise.name}</h2>
+                  {exercise.description && (
+                    <p className="mt-1 line-clamp-2 text-sm text-zinc-400">
+                      {exercise.description}
+                    </p>
+                  )}
+                  {exercise.labels.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1">
+                      {exercise.labels.map(({ label }) => (
+                        <span
+                          key={label.id}
+                          className={`rounded-full px-2 py-0.5 text-xs ${
+                            selected.has(label.id)
+                              ? "bg-orange-500/20 text-orange-400"
+                              : "bg-orange-500/10 text-orange-400"
+                          }`}
+                        >
+                          {label.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Por {exercise.createdBy.name}
                   </p>
-                )}
-                {exercise.labels.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-1">
-                    {exercise.labels.map(({ label }) => (
-                      <span
-                        key={label.id}
-                        className={`rounded-full px-2 py-0.5 text-xs ${
-                          selected.has(label.id)
-                            ? "bg-orange-500/20 text-orange-400"
-                            : "bg-orange-500/10 text-orange-400"
-                        }`}
-                      >
-                        {label.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <p className="mt-2 text-xs text-zinc-500">
-                  Por {exercise.createdBy.name}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <PaginationClient
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
+        </>
       )}
     </div>
   );

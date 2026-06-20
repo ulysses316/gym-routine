@@ -14,21 +14,27 @@ export default async function StatsPage() {
   const session = await getSession();
   if (!session) return null;
 
-  const logs = await prisma.workoutLog.findMany({
-    where: { userId: session.userId },
-    orderBy: { date: "asc" },
-    include: {
-      sets: {
-        include: {
-          exercise: {
-            include: { labels: { include: { label: true } } },
+  const [logs, user] = await Promise.all([
+    prisma.workoutLog.findMany({
+      where: { userId: session.userId },
+      orderBy: { date: "asc" },
+      include: {
+        sets: {
+          include: {
+            exercise: {
+              include: { labels: { include: { label: true } } },
+            },
           },
         },
       },
-    },
-  });
+    }),
+    prisma.user.findUniqueOrThrow({
+      where: { id: session.userId },
+      select: { weekStartDay: true },
+    }),
+  ]);
 
-  const stats = computeStats(logs);
+  const stats = computeStats(logs, user.weekStartDay);
 
   if (!stats.hasData) {
     return (
@@ -72,6 +78,7 @@ export default async function StatsPage() {
         currentStreak={stats.currentStreak}
         bestStreak={stats.bestStreak}
         weeklyFrequency={stats.weeklyFrequency}
+        weekStartDay={user.weekStartDay}
       />
 
       {/* 5. Volumen — tendencia de carga */}
