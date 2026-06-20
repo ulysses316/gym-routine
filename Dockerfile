@@ -1,12 +1,12 @@
 # ── Stage 1: install dependencies ──────────────────────────────────────────────
-FROM oven/bun:1.2-alpine AS deps
+FROM docker.io/oven/bun:1.2-alpine AS deps
 WORKDIR /app
 
 COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile
 
 # ── Stage 2: build ──────────────────────────────────────────────────────────────
-FROM oven/bun:1.2-alpine AS builder
+FROM docker.io/oven/bun:1.2-alpine AS builder
 WORKDIR /app
 
 COPY --from=deps /app/node_modules ./node_modules
@@ -20,7 +20,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN bun run build
 
 # ── Stage 3: production runner ──────────────────────────────────────────────────
-FROM node:22-alpine AS runner
+FROM docker.io/node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
